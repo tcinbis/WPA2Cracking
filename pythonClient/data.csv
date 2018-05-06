@@ -1,0 +1,3 @@
+Benchmark for WPA/WPA2,WPA2 8 digits,WPA2 8 lower case letters,WPA2 8 upper case letters,WPA2 8 mixed chars,WPA2 10 custom charset
+CPU,10699,5175,4984,5109,3889,4216
+GPU,74600,63875,63625,63000,62500,64125
