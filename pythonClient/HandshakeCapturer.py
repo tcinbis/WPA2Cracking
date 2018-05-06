@@ -63,10 +63,41 @@ def stopInterface(interface):
     else:
         return False
 
+def runAirodump(interface,args):
+    airodump_cmd = list()
+    airodump_cmd.append(airodump_cmd_template)
+    for arg in args:
+        airodump_cmd.append(arg)
+    airodump_cmd.append(interface+'mon')
+
+    print(airodump_cmd)
+
+    airmon_process = subprocess.Popen(airodump_cmd, stdout=PIPE, stderr=PIPE, env=env)
+
+    try:
+        outs, errs = airmon_process.communicate(timeout=1)
+    except subprocess.TimeoutExpired:
+        airmon_process.kill()
+        outs, errs = airmon_process.communicate()
+
+    err_str = errs.decode('utf-8')
+    out_str = outs.decode('utf-8')
+
+    print(out_str)
+
 def main():
-    print(startInterface('wlan0'))
+    interface = 'wlan0'
+    if startInterface(interface):
+        # continue, because airmon was successful
+        arg_list = list()
+        arg_list.append('--write')
+        arg_list.append('output')
+        arg_list.append('--output-format')
+        arg_list.append('csv')
+        runAirodump(interface,arg_list)
+    else:
+        return -1
     sleep(5)
-    print(stopInterface('wlan0'))
     #airodump_process = Airodump('wlan0mon',**kwargs)
     #airodump_process._flags = ['--write', 'output']
     #airodump_process.start()
