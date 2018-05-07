@@ -2,6 +2,8 @@ from time import sleep
 import os
 import subprocess
 from subprocess import PIPE
+import threading
+import _thread
 
 airmon_cmd_template = 'airmon-ng'
 airodump_cmd_template = 'airodump-ng'
@@ -74,16 +76,35 @@ def runAirodump(interface,args):
 
     airmon_process = subprocess.Popen(airodump_cmd, stdout=PIPE, stderr=PIPE, env=env)
 
-    try:
-        outs, errs = airmon_process.communicate(timeout=1)
-    except subprocess.TimeoutExpired:
-        airmon_process.kill()
-        outs, errs = airmon_process.communicate()
+    return airmon_process
 
-    err_str = errs.decode('utf-8')
-    out_str = outs.decode('utf-8')
+class AirodumpThread (threading.Thread):
+    global process
 
-    print(out_str)
+    def __init__(self,thread_id, interface, arg_list):
+        super(AirodumpThread, self).__init__()
+        self._stop_event = threading.Event()
+        self.thread_id = thread_id
+        self.interface = interface
+        self.arg_list = arg_list
+
+    def run(self):
+        global process
+        print("Thread {0} starting".format(self.thread_id))
+        process = runAirodump(self.interface,self.arg_list)
+
+        while(not self._stop_event.is_set()):
+            sleep(0.5)
+            print("Waiting in thread")
+
+        process.terminate()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
+
 
 def main():
     interface = 'wlan0'
@@ -94,17 +115,20 @@ def main():
         arg_list.append('output')
         arg_list.append('--output-format')
         arg_list.append('csv')
-        runAirodump(interface,arg_list)
+
+        thread1 = AirodumpThread(1,interface,arg_list)
+        thread1.setDaemon(True)
+        thread1.start()
+        #process = runAirodump(interface,arg_list)
     else:
         return -1
+
     sleep(5)
-    #airodump_process = Airodump('wlan0mon',**kwargs)
-    #airodump_process._flags = ['--write', 'output']
-    #airodump_process.start()
-    #print(airodump_process.writepath)
-    #sleep(5)
-    #print(airodump_process.stop())
-    #print(airodump_process.clients())
+    print("Send stop to thread")
+    thread1.stop()
+    print("Asked thread to stop now.")
+    sleep(1)
+    print(thread1.isAlive())
 
 
 if __name__ == '__main__':
