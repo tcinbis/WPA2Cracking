@@ -8,6 +8,7 @@ airodump_cmd_template = 'airodump-ng'
 PATH = os.environ['PATH']
 env = {'PATH': PATH, 'MON_PREFIX': 'smoothie'}
 
+
 def runAirodump(interface, args):
     airodump_cmd = list()
     airodump_cmd.append(airodump_cmd_template)
@@ -40,7 +41,7 @@ class AirodumpThread(threading.Thread):
 
         while (not self._stop_event.is_set()):
             sleep(0.5)
-            print("Waiting in thread")
+            # print("Waiting in thread")
 
         process.terminate()
 

