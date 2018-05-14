@@ -1,3 +1,2 @@
 WPA2 8 digits,WPA2 8 lower case letters,WPA2 8 upper case letters,WPA2 8 mixed chars,WPA2 10 custom charset
-CPU,5.5,10896,10968,inf,inf
-GPU,0.15,320,331,inf,inf
+GPU,0.0022,9.8,9.7,309648,314472
