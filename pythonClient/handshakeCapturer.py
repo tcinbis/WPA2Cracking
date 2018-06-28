@@ -2,8 +2,6 @@ import os
 import random
 import subprocess
 import time
-import pandas
-from pandas import DataFrame, read_csv
 from subprocess import PIPE
 from time import sleep
 
@@ -78,6 +76,7 @@ def stopInterface(interface):
 def getRandomName():
     return ''.join(random.choice('0123456789ABCDEF') for i in range(5))
 
+
 def ask_for_network(parser):
     print('Please select your desired network')
     for idx, net in enumerate(parser.available_bssids):
@@ -90,6 +89,7 @@ def ask_for_network(parser):
         exit(-1)
 
     return selected
+
 
 def main():
     interface = 'wlan1'
@@ -139,7 +139,7 @@ def main():
 
         print(capture_arg_list)
 
-        capture_thread = AirodumpThread(2,interface,capture_arg_list)
+        capture_thread = AirodumpThread(2, interface, capture_arg_list)
         print('Starting thread to capture handshake!')
         capture_thread.start()
 
@@ -169,12 +169,12 @@ def main():
         sleep(1)
 
         converter = HccapxConverter()
-        success = converter.convert(capture_output_name,capture_output_name)
+        success = converter.convert(capture_output_name, capture_output_name)
         print(success)
         if success:
             print('Successfully converted cap file to hccapx format. Now uploading...')
             uploader = HashToPolisUploader()
-            uploader.upload(capture_output_name+'.hccapx')
+            uploader.upload(capture_output_name + '.hccapx')
 
     else:
         print('Error starting interface {0}'.format(interface))

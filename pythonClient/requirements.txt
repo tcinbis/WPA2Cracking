@@ -1,0 +1,13 @@
+# Python requirements for running the script
+pandas
+csv
+requests
+
+# System requirements
+# Tested and developed on Parrot OS, because all needed software like Aircrack-ng and Hashcat Utils was
+# already installed. In case you want to run this on another OS you need to change the path to each command line utility
+# whenever the scripts tries to start a new subprocess.
+# E.g.: hashcat_convert_cmd.append('/usr/lib/hashcat-utils/cap2hccapx.bin '+str(os.path.abspath(captureFileName + '-01.cap'))+' '+outputFileName+'.hccapx')
+# In this case you need to change '/usr/lib/hashcat-utils/cap2hccapx.bin ' to whatever path your system is using for
+# cap2hccapx.bin.
+# In case of this code snippet: airmon_cmd.append('airmon-ng') you only need to make sure, that airmon-ng is in your path
